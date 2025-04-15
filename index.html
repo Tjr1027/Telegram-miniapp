@@ -1,41 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>点金币得分</title>
+  <title>羊駝養成遊戲</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body { text-align: center; font-family: sans-serif; margin-top: 50px; }
-    #coin { width: 150px; cursor: pointer; }
-    #score { font-size: 24px; margin-top: 20px; }
+    #alpaca { width: 180px; cursor: pointer; transition: transform 0.1s; }
+    #score, #level, #exp, #message { font-size: 20px; margin-top: 10px; }
+    #user-info { margin-top: 30px; }
+    .shake { animation: shake 0.2s; }
+    @keyframes shake {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(10deg); }
+      50% { transform: rotate(-10deg); }
+      75% { transform: rotate(5deg); }
+      100% { transform: rotate(0deg); }
+    }
+    #feed-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ffcb77;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h2>点金币得分</h2>
-  <img id="coin" src="https://i.imgur.com/kd6qQx2.png" />
+  <h2>羊駝養成遊戲 🦙</h2>
+  <img id="alpaca" src="https://i.imgur.com/UJ0m3xe.png" />
   <div id="score">得分：0</div>
+  <div id="level">等級：1</div>
+  <div id="exp">經驗值：0 / 10</div>
+  <button id="feed-btn">餵飼料 🥕（5分 ➜ +3 EXP）</button>
+  <div id="message"></div>
+
+  <div id="user-info">
+    <img id="user-pic" src="" width="80" style="border-radius: 50%;" />
+    <div id="user-name"></div>
+  </div>
+
+  <audio id="bleat" src="https://www.fesliyanstudios.com/play-mp3/4429" preload="auto"></audio>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
     let score = 0;
-    const coin = document.getElementById("coin");
-    const scoreDisplay = document.getElementById("score");
+    let exp = 0;
+    let level = 1;
 
-    coin.addEventListener("click", () => {
+    const alpaca = document.getElementById("alpaca");
+    const scoreDisplay = document.getElementById("score");
+    const levelDisplay = document.getElementById("level");
+    const expDisplay = document.getElementById("exp");
+    const messageDisplay = document.getElementById("message");
+    const feedBtn = document.getElementById("feed-btn");
+    const bleat = document.getElementById("bleat");
+
+    // 點羊駝增加分數＆經驗
+    alpaca.addEventListener("click", () => {
       score++;
-      scoreDisplay.innerText = `得分：${score}`;
+      exp++;
+      updateDisplay();
+      bleat.currentTime = 0;
+      bleat.play();
+      shakeAlpaca();
     });
-    <div id="user-info">
-  <img id="user-pic" src="" width="80" style="border-radius: 50%;" />
-  <div id="user-name"></div>
-</div>
+
+    // 餵飼料功能
+    feedBtn.addEventListener("click", () => {
+      if (score >= 5) {
+        score -= 5;
+        exp += 3;
+        showMessage("羊駝：「咩～ 好好吃！」");
+        bleat.currentTime = 0;
+        bleat.play();
+        updateDisplay();
+        shakeAlpaca();
+      } else {
+        showMessage("分數不夠餵飼料 😢");
+      }
+    });
+
+    // 搖頭動畫
+    function shakeAlpaca() {
+      alpaca.classList.add("shake");
+      setTimeout(() => alpaca.classList.remove("shake"), 200);
+    }
+
+    // 升級邏輯
+    function getExpToLevelUp() {
+      return level * 10;
+    }
+
+    function updateDisplay() {
+      const expNeeded = getExpToLevelUp();
+      if (exp >= expNeeded) {
+        exp -= expNeeded;
+        level++;
+        alpaca.style.width = 180 + (level * 5) + "px";
+      }
+      scoreDisplay.innerText = `得分：${score}`;
+      levelDisplay.innerText = `等級：${level}`;
+      expDisplay.innerText = `經驗值：${exp} / ${getExpToLevelUp()}`;
+    }
+
+    // 顯示訊息
+    function showMessage(msg) {
+      messageDisplay.innerText = msg;
+      setTimeout(() => {
+        messageDisplay.innerText = "";
+      }, 2000);
+    }
+
+    // Telegram 使用者
+    const user = tg.initDataUnsafe.user;
+    if (user) {
+      document.getElementById("user-name").innerText = `你好，${user.first_name}`;
+      document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
+    }
   </script>
-  const user = tg.initDataUnsafe.user;
-if (user) {
-  document.getElementById("user-name").innerText = `你好，${user.first_name}`;
-  document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
-}
 </body>
-  
 </html>
