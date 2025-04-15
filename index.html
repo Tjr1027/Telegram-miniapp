@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>点金币得分</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { text-align: center; font-family: sans-serif; margin-top: 50px; }
+    #coin { width: 150px; cursor: pointer; }
+    #score { font-size: 24px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>点金币得分</h2>
+  <img id="coin" src="https://i.imgur.com/kd6qQx2.png" />
+  <div id="score">得分：0</div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let score = 0;
+    const coin = document.getElementById("coin");
+    const scoreDisplay = document.getElementById("score");
+
+    coin.addEventListener("click", () => {
+      score++;
+      scoreDisplay.innerText = `得分：${score}`;
+    });
+  </script>
+</body>
+</html>
