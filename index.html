@@ -26,6 +26,16 @@
       score++;
       scoreDisplay.innerText = `得分：${score}`;
     });
+    <div id="user-info">
+  <img id="user-pic" src="" width="80" style="border-radius: 50%;" />
+  <div id="user-name"></div>
+</div>
   </script>
+  const user = tg.initDataUnsafe.user;
+if (user) {
+  document.getElementById("user-name").innerText = `你好，${user.first_name}`;
+  document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
+}
 </body>
+  
 </html>
