@@ -6,7 +6,7 @@
   <style>
     body { text-align: center; font-family: sans-serif; margin-top: 50px; }
     #alpaca { width: 180px; cursor: pointer; transition: transform 0.1s; }
-    #score, #level, #exp, #message { font-size: 20px; margin-top: 10px; }
+    #score, #level, #exp, #message, #upload-status { font-size: 20px; margin-top: 10px; }
     #user-info { margin-top: 30px; }
     .shake { animation: shake 0.2s; }
     @keyframes shake {
@@ -25,6 +25,10 @@
       border-radius: 10px;
       cursor: pointer;
     }
+    #upload-status {
+      color: #888;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -35,6 +39,7 @@
   <div id="exp">經驗值：0 / 10</div>
   <button id="feed-btn">餵飼料 🥕（5分 ➜ +3 EXP）</button>
   <div id="message"></div>
+  <div id="upload-status"></div>
 
   <div id="user-info">
     <img id="user-pic" src="" width="80" style="border-radius: 50%;" />
@@ -56,10 +61,17 @@
     const levelDisplay = document.getElementById("level");
     const expDisplay = document.getElementById("exp");
     const messageDisplay = document.getElementById("message");
+    const uploadStatus = document.getElementById("upload-status");
     const feedBtn = document.getElementById("feed-btn");
     const bleat = document.getElementById("bleat");
 
-    // 點羊駝增加分數＆經驗
+    const user = tg.initDataUnsafe.user;
+
+    if (user) {
+      document.getElementById("user-name").innerText = `你好，${user.first_name}`;
+      document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
+    }
+
     alpaca.addEventListener("click", () => {
       score++;
       exp++;
@@ -67,9 +79,9 @@
       bleat.currentTime = 0;
       bleat.play();
       shakeAlpaca();
+      uploadGameData();
     });
 
-    // 餵飼料功能
     feedBtn.addEventListener("click", () => {
       if (score >= 5) {
         score -= 5;
@@ -79,18 +91,17 @@
         bleat.play();
         updateDisplay();
         shakeAlpaca();
+        uploadGameData();
       } else {
         showMessage("分數不夠餵飼料 😢");
       }
     });
 
-    // 搖頭動畫
     function shakeAlpaca() {
       alpaca.classList.add("shake");
       setTimeout(() => alpaca.classList.remove("shake"), 200);
     }
 
-    // 升級邏輯
     function getExpToLevelUp() {
       return level * 10;
     }
@@ -107,7 +118,6 @@
       expDisplay.innerText = `經驗值：${exp} / ${getExpToLevelUp()}`;
     }
 
-    // 顯示訊息
     function showMessage(msg) {
       messageDisplay.innerText = msg;
       setTimeout(() => {
@@ -115,12 +125,34 @@
       }, 2000);
     }
 
-    // Telegram 使用者
-    const user = tg.initDataUnsafe.user;
-    if (user) {
-      document.getElementById("user-name").innerText = `你好，${user.first_name}`;
-      document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
+    function uploadGameData() {
+      if (!user) return;
+      const data = {
+        id: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        score: score,
+        level: level,
+        exp: exp
+      };
+
+      fetch('https://script.google.com/u/0/home/projects/19faFb0Qa7aGrExMhJWqw0aCKwiJaOPMMe6d8cK5jO63vxXg0NiARfOdh/edit', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      uploadStatus.innerText = "已儲存遊戲資料 ✔️";
+      setTimeout(() => {
+        uploadStatus.innerText = "";
+      }, 2000);
     }
+
+    // 可選：每 30 秒自動儲存一次
+    setInterval(uploadGameData, 30000);
   </script>
 </body>
 </html>
