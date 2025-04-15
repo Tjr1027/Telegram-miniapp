@@ -1,158 +1,526 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>羊駝養成遊戲</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body { text-align: center; font-family: sans-serif; margin-top: 50px; }
-    #alpaca { width: 180px; cursor: pointer; transition: transform 0.1s; }
-    #score, #level, #exp, #message, #upload-status { font-size: 20px; margin-top: 10px; }
-    #user-info { margin-top: 30px; }
-    .shake { animation: shake 0.2s; }
-    @keyframes shake {
-      0% { transform: rotate(0deg); }
-      25% { transform: rotate(10deg); }
-      50% { transform: rotate(-10deg); }
-      75% { transform: rotate(5deg); }
-      100% { transform: rotate(0deg); }
-    }
-    #feed-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      background-color: #ffcb77;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    #upload-status {
-      color: #888;
-      font-size: 16px;
-    }
-  </style>
+    <title>币了个币 - 加密货币消除游戏</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #game-board {
+            width: 100%;
+            height: 500px;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .tile {
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background-size: 60%;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            background-color: #ffffff;
+            border: 2px solid #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #343a40;
+            font-size: 10px;
+            text-align: center;
+            padding-top: 40px;
+            box-sizing: border-box;
+        }
+        .tile:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        .tile.selected {
+            transform: scale(1.12);
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.8);
+            border-color: #ffc107;
+        }
+        #slot-bar {
+            height: 80px;
+            background: #e9ecef;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 0 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .slot {
+            width: 54px;
+            height: 54px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 2px dashed #adb5bd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            text-align: center;
+            padding-top: 40px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+        .slot.filled {
+            border: 2px solid #495057;
+            animation: pulse 0.5s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #level-display {
+            font-size: 28px;
+            margin: 15px 0;
+            color: #495057;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        #score-display {
+            font-size: 20px;
+            margin: 10px 0;
+            color: #4dabf7;
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 300px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: modalAppear 0.3s;
+        }
+        @keyframes modalAppear {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal h2 {
+            margin-top: 0;
+            color: #4dabf7;
+        }
+        .modal button {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <h2>羊駝養成遊戲 🦙</h2>
-  <img id="alpaca" src="https://i.imgur.com/UJ0m3xe.png" />
-  <div id="score">得分：0</div>
-  <div id="level">等級：1</div>
-  <div id="exp">經驗值：0 / 10</div>
-  <button id="feed-btn">餵飼料 🥕（5分 ➜ +3 EXP）</button>
-  <div id="message"></div>
-  <div id="upload-status"></div>
+    <h1>🐶 币了个币 🐶</h1>
+    <div id="level-display">第1关</div>
+    <div id="score-display">分数: 0</div>
+    <div id="game-container">
+        <div id="game-board"></div>
+        <div id="slot-bar">
+            <div class="slot"></div>
+            <div class="slot"></div>
+            <div class="slot"></div>
+            <div class="slot"></div>
+            <div class="slot"></div>
+            <div class="slot"></div>
+            <div class="slot"></div>
+        </div>
+    </div>
+    <div id="controls">
+        <button id="restart">重新开始</button>
+        <button id="hint">提示 (3)</button>
+    </div>
 
-  <div id="user-info">
-    <img id="user-pic" src="" width="80" style="border-radius: 50%;" />
-    <div id="user-name"></div>
-  </div>
+    <div id="win-modal" class="modal">
+        <div class="modal-content">
+            <h2>🎉 恭喜过关! 🎉</h2>
+            <p>你成功通过了第<span id="current-level">1</span>关！</p>
+            <p>获得分数: <span id="level-score">100</span></p>
+            <button id="next-level">下一关</button>
+        </div>
+    </div>
 
-  <audio id="bleat" src="https://www.fesliyanstudios.com/play-mp3/4429" preload="auto"></audio>
+    <div id="lose-modal" class="modal">
+        <div class="modal-content">
+            <h2>😭 游戏结束 😭</h2>
+            <p>你在第<span id="failed-level">1</span>关失败了</p>
+            <p>最终分数: <span id="final-score">0</span></p>
+            <button id="try-again">再试一次</button>
+        </div>
+    </div>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    <script>
+        // 加密货币数据
+        const cryptoData = [
+            { name: '比特币', symbol: 'BTC', color: '#f7931a' },
+            { name: '以太坊', symbol: 'ETH', color: '#627eea' },
+            { name: '狗狗币', symbol: 'DOGE', color: '#c2a633' },
+            { name: '柴犬币', symbol: 'SHIB', color: '#f00500' },
+            { name: '索拉纳', symbol: 'SOL', color: '#00ffbd' },
+            { name: '瑞波币', symbol: 'XRP', color: '#27a2db' },
+            { name: '艾达币', symbol: 'ADA', color: '#0033ad' },
+            { name: '波卡币', symbol: 'DOT', color: '#e6007a' },
+            { name: '莱特币', symbol: 'LTC', color: '#345d9d' },
+            { name: '链链接', symbol: 'LINK', color: '#2a5ada' },
+            { name: '恒星币', symbol: 'XLM', color: '#000000' },
+            { name: '泰达币', symbol: 'USDT', color: '#26a17b' }
+        ];
 
-    let score = 0;
-    let exp = 0;
-    let level = 1;
+        // 游戏状态
+        const state = {
+            level: 1,
+            score: 0,
+            tiles: [],
+            selectedTiles: [],
+            slots: Array(7).fill(null),
+            blocked: false,
+            hintCount: 3,
+            tileCount: 0
+        };
 
-    const alpaca = document.getElementById("alpaca");
-    const scoreDisplay = document.getElementById("score");
-    const levelDisplay = document.getElementById("level");
-    const expDisplay = document.getElementById("exp");
-    const messageDisplay = document.getElementById("message");
-    const uploadStatus = document.getElementById("upload-status");
-    const feedBtn = document.getElementById("feed-btn");
-    const bleat = document.getElementById("bleat");
+        // DOM元素
+        const gameBoard = document.getElementById('game-board');
+        const slotElements = document.querySelectorAll('.slot');
+        const levelDisplay = document.getElementById('level-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const restartButton = document.getElementById('restart');
+        const hintButton = document.getElementById('hint');
+        const winModal = document.getElementById('win-modal');
+        const loseModal = document.getElementById('lose-modal');
+        const currentLevelSpan = document.getElementById('current-level');
+        const levelScoreSpan = document.getElementById('level-score');
+        const failedLevelSpan = document.getElementById('failed-level');
+        const finalScoreSpan = document.getElementById('final-score');
+        const nextLevelButton = document.getElementById('next-level');
+        const tryAgainButton = document.getElementById('try-again');
 
-    const user = tg.initDataUnsafe.user;
+        // 初始化游戏
+        function initGame() {
+            clearBoard();
+            createTiles();
+            renderTiles();
+            updateSlots();
+            updateUI();
+        }
 
-    if (user) {
-      document.getElementById("user-name").innerText = `你好，${user.first_name}`;
-      document.getElementById("user-pic").src = `https://t.me/i/userpic/320/${user.username}.jpg`;
-    }
+        // 清空游戏板
+        function clearBoard() {
+            gameBoard.innerHTML = '';
+            state.tiles = [];
+            state.selectedTiles = [];
+            state.slots = Array(7).fill(null);
+            state.blocked = false;
+            state.tileCount = 0;
+        }
 
-    alpaca.addEventListener("click", () => {
-      score++;
-      exp++;
-      updateDisplay();
-      bleat.currentTime = 0;
-      bleat.play();
-      shakeAlpaca();
-      uploadGameData();
-    });
+        // 创建方块
+        function createTiles() {
+            const baseCount = 15;
+            const levelMultiplier = 1 + (state.level - 1) * 0.3;
+            const tileCount = Math.floor(baseCount * levelMultiplier);
+            state.tileCount = tileCount;
+            
+            // 根据关卡决定使用多少种加密货币
+            const cryptoCount = Math.min(4 + Math.floor(state.level / 3), cryptoData.length);
+            const usedCryptos = getRandomCryptos(cryptoCount);
+            
+            // 创建多层方块
+            for (let i = 0; i < tileCount; i++) {
+                const crypto = usedCryptos[Math.floor(Math.random() * usedCryptos.length)];
+                const layer = Math.floor(Math.random() * 3); // 0-2层
+                
+                // 随机位置，确保不会完全重叠
+                let x, y, overlapping;
+                let attempts = 0;
+                do {
+                    overlapping = false;
+                    x = 20 + Math.random() * (gameBoard.offsetWidth - 100);
+                    y = 20 + Math.random() * (gameBoard.offsetHeight - 100);
+                    
+                    // 检查是否与其他方块重叠过多
+                    for (const tile of state.tiles) {
+                        if (tile.layer === layer && 
+                            Math.abs(tile.x - x) < 50 && 
+                            Math.abs(tile.y - y) < 50) {
+                            overlapping = true;
+                            break;
+                        }
+                    }
+                    attempts++;
+                } while (overlapping && attempts < 20);
+                
+                state.tiles.push({
+                    id: i,
+                    crypto,
+                    layer,
+                    x,
+                    y,
+                    visible: true,
+                    element: null
+                });
+            }
+        }
 
-    feedBtn.addEventListener("click", () => {
-      if (score >= 5) {
-        score -= 5;
-        exp += 3;
-        showMessage("羊駝：「咩～ 好好吃！」");
-        bleat.currentTime = 0;
-        bleat.play();
-        updateDisplay();
-        shakeAlpaca();
-        uploadGameData();
-      } else {
-        showMessage("分數不夠餵飼料 😢");
-      }
-    });
+        // 获取随机的加密货币
+        function getRandomCryptos(count) {
+            const shuffled = [...cryptoData].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
 
-    function shakeAlpaca() {
-      alpaca.classList.add("shake");
-      setTimeout(() => alpaca.classList.remove("shake"), 200);
-    }
+        // 渲染方块
+        function renderTiles() {
+            // 按层排序，确保上层覆盖下层
+            state.tiles.sort((a, b) => a.layer - b.layer);
+            
+            state.tiles.forEach(tile => {
+                if (!tile.visible) return;
+                
+                const tileElement = document.createElement('div');
+                tileElement.className = 'tile';
+                tileElement.style.left = `${tile.x}px`;
+                tileElement.style.top = `${tile.y}px`;
+                tileElement.style.backgroundColor = tile.crypto.color;
+                tileElement.textContent = tile.crypto.symbol;
+                tileElement.dataset.id = tile.id;
+                tileElement.title = tile.crypto.name;
+                
+                tileElement.addEventListener('click', () => handleTileClick(tile));
+                
+                gameBoard.appendChild(tileElement);
+                tile.element = tileElement;
+            });
+        }
 
-    function getExpToLevelUp() {
-      return level * 10;
-    }
+        // 处理方块点击
+        function handleTileClick(tile) {
+            if (state.blocked || !tile.visible || state.slots.every(slot => slot !== null)) return;
+            
+            // 添加到选中列表
+            state.selectedTiles.push(tile);
+            tile.element.classList.add('selected');
+            
+            // 检查是否有3个相同的
+            checkMatches();
+        }
 
-    function updateDisplay() {
-      const expNeeded = getExpToLevelUp();
-      if (exp >= expNeeded) {
-        exp -= expNeeded;
-        level++;
-        alpaca.style.width = 180 + (level * 5) + "px";
-      }
-      scoreDisplay.innerText = `得分：${score}`;
-      levelDisplay.innerText = `等級：${level}`;
-      expDisplay.innerText = `經驗值：${exp} / ${getExpToLevelUp()}`;
-    }
+        // 检查匹配
+        function checkMatches() {
+            // 按类型分组
+            const cryptoGroups = {};
+            state.selectedTiles.forEach(tile => {
+                const symbol = tile.crypto.symbol;
+                if (!cryptoGroups[symbol]) cryptoGroups[symbol] = [];
+                cryptoGroups[symbol].push(tile);
+            });
+            
+            // 检查是否有3个相同的
+            let matched = false;
+            for (const symbol in cryptoGroups) {
+                if (cryptoGroups[symbol].length >= 3) {
+                    matched = true;
+                    // 计算得分 (基础分 + 连击加成)
+                    const baseScore = 10 * state.level;
+                    const comboBonus = (cryptoGroups[symbol].length - 3) * 5;
+                    const score = baseScore + comboBonus;
+                    state.score += score;
+                    
+                    // 消除匹配的方块
+                    cryptoGroups[symbol].forEach(tile => {
+                        tile.visible = false;
+                        if (tile.element) {
+                            tile.element.style.transform = 'scale(1.2)';
+                            tile.element.style.opacity = '0';
+                            setTimeout(() => {
+                                tile.element.remove();
+                            }, 300);
+                        }
+                    });
+                    
+                    // 从选中列表中移除
+                    state.selectedTiles = state.selectedTiles.filter(t => t.crypto.symbol !== symbol);
+                    
+                    // 检查是否胜利
+                    if (state.tiles.every(tile => !tile.visible)) {
+                        setTimeout(() => {
+                            showWinModal();
+                        }, 800);
+                    }
+                }
+            }
+            
+            // 如果没有匹配，添加到槽位
+            if (!matched) {
+                addToSlot();
+            }
+            
+            updateUI();
+        }
 
-    function showMessage(msg) {
-      messageDisplay.innerText = msg;
-      setTimeout(() => {
-        messageDisplay.innerText = "";
-      }, 2000);
-    }
+        // 添加到槽位
+        function addToSlot() {
+            const emptySlotIndex = state.slots.findIndex(slot => slot === null);
+            if (emptySlotIndex === -1) return;
+            
+            const tile = state.selectedTiles.pop();
+            state.slots[emptySlotIndex] = tile;
+            tile.element.classList.remove('selected');
+            tile.element.remove();
+            
+            // 更新槽位显示
+            const slotElement = slotElements[emptySlotIndex];
+            slotElement.style.backgroundColor = tile.crypto.color;
+            slotElement.textContent = tile.crypto.symbol;
+            slotElement.title = tile.crypto.name;
+            slotElement.classList.add('filled');
+            
+            // 检查是否失败
+            if (state.slots.every(slot => slot !== null)) {
+                state.blocked = true;
+                setTimeout(() => {
+                    showLoseModal();
+                }, 500);
+            }
+        }
 
-    function uploadGameData() {
-      if (!user) return;
-      const data = {
-        id: user.id,
-        username: user.username,
-        first_name: user.first_name,
-        score: score,
-        level: level,
-        exp: exp
-      };
+        // 更新UI显示
+        function updateUI() {
+            levelDisplay.textContent = `第${state.level}关`;
+            scoreDisplay.textContent = `分数: ${state.score}`;
+            hintButton.textContent = `提示 (${state.hintCount})`;
+            hintButton.disabled = state.hintCount <= 0;
+        }
 
-      fetch('https://script.google.com/u/0/home/projects/19faFb0Qa7aGrExMhJWqw0aCKwiJaOPMMe6d8cK5jO63vxXg0NiARfOdh/edit', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
+        // 显示胜利弹窗
+        function showWinModal() {
+            currentLevelSpan.textContent = state.level;
+            levelScoreSpan.textContent = 100 * state.level;
+            winModal.style.display = 'flex';
+        }
 
-      uploadStatus.innerText = "已儲存遊戲資料 ✔️";
-      setTimeout(() => {
-        uploadStatus.innerText = "";
-      }, 2000);
-    }
+        // 显示失败弹窗
+        function showLoseModal() {
+            failedLevelSpan.textContent = state.level;
+            finalScoreSpan.textContent = state.score;
+            loseModal.style.display = 'flex';
+        }
 
-    // 可選：每 30 秒自動儲存一次
-    setInterval(uploadGameData, 30000);
-  </script>
+        // 提示功能
+        function useHint() {
+            if (state.hintCount <= 0 || state.blocked) return;
+            
+            // 找出可以组成3个的加密货币
+            const visibleTiles = state.tiles.filter(tile => tile.visible);
+            const cryptoCount = {};
+            
+            visibleTiles.forEach(tile => {
+                const symbol = tile.crypto.symbol;
+                cryptoCount[symbol] = (cryptoCount[symbol] || 0) + 1;
+            });
+            
+            // 找到至少有3个的加密货币
+            const availableCryptos = Object.keys(cryptoCount).filter(symbol => cryptoCount[symbol] >= 3);
+            if (availableCryptos.length === 0) return;
+            
+            const hintCrypto = availableCryptos[0];
+            const hintTiles = visibleTiles.filter(tile => tile.crypto.symbol === hintCrypto).slice(0, 3);
+            
+            // 高亮提示
+            hintTiles.forEach(tile => {
+                if (tile.element) {
+                    tile.element.style.boxShadow = '0 0 15px #ff0';
+                    setTimeout(() => {
+                        if (tile.element) tile.element.style.boxShadow = '';
+                    }, 1000);
+                }
+            });
+            
+            state.hintCount--;
+            updateUI();
+        }
+
+        // 事件监听
+        restartButton.addEventListener('click', () => {
+            state.level = 1;
+            state.score = 0;
+            state.hintCount = 3;
+            initGame();
+            winModal.style.display = 'none';
+            loseModal.style.display = 'none';
+        });
+
+        hintButton.addEventListener('click', useHint);
+
+        nextLevelButton.addEventListener('click', () => {
+            state.level++;
+            state.hintCount = Math.min(state.hintCount + 1, 5); // 每关增加1个提示，最多5个
+            winModal.style.display = 'none';
+            initGame();
+        });
+
+        tryAgainButton.addEventListener('click', () => {
+            loseModal.style.display = 'none';
+            initGame();
+        });
+
+        // 开始游戏
+        initGame();
+    </script>
 </body>
 </html>
